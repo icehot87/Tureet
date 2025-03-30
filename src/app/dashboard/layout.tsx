@@ -45,6 +45,7 @@ export default function DashboardLayout({
                       <Link
                         key={item.name}
                         href={item.href}
+                        data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
                         className={`${
                           isActive
                             ? 'bg-indigo-700 text-white'
@@ -86,6 +87,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  data-testid={`mobile-nav-${item.name.toLowerCase().replace(' ', '-')}`}
                   className={`${
                     isActive
                       ? 'bg-indigo-700 text-white'

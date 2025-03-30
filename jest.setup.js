@@ -6,10 +6,15 @@ jest.mock('next/navigation', () => ({
     return {
       push: jest.fn(),
       refresh: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
     };
   },
   usePathname() {
     return '';
+  },
+  useSearchParams() {
+    return new URLSearchParams();
   },
 }));
 
@@ -25,4 +30,11 @@ jest.mock('next-auth/react', () => ({
     },
     status: 'authenticated',
   })),
-})); 
+}));
+
+// Mock next/link
+jest.mock('next/link', () => {
+  return ({ children, href, className }) => {
+    return <a href={href} className={className}>{children}</a>;
+  };
+}); 
