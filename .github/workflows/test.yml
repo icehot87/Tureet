@@ -1,4 +1,4 @@
-name: Run Tests
+name: CI - Run Tests
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Run Tests
 
     services:
       postgres:
