@@ -31,7 +31,7 @@ Tureet is an open-source test management tool that can be deployed locally or in
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/tureet.git
+git clone https://github.com/icehot87/tureet.git
 cd tureet
 ```
 
