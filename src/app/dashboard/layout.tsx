@@ -21,8 +21,41 @@ export default function DashboardLayout({
   const { data: session } = useSession();
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push('/');
+    try {
+      // Disable the button to prevent multiple clicks
+      const signOutButton = document.querySelector('button[onClick="handleSignOut"]');
+      if (signOutButton) {
+        signOutButton.setAttribute('disabled', 'true');
+      }
+
+      // Clear any client-side session data
+      await signOut({ 
+        redirect: true,
+        callbackUrl: '/'
+      });
+
+      // Clear any local storage or session storage items
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear all cookies using for...of
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name] = cookie.trim().split('=');
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+
+      // Use a timeout to ensure the sign out process completes
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // If there's an error, still try to clear everything and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
   };
 
   return (
