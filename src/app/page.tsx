@@ -12,27 +12,26 @@ export default function Home() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/dashboard'
       });
-
-      if (result?.error) {
-        setError('Invalid email or password');
-      } else {
-        router.push('/dashboard');
-        router.refresh();
-      }
     } catch (error) {
       setError('An error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -51,7 +50,7 @@ export default function Home() {
             </p>
             <div className="mt-8">
               <Link
-                href="/test-cases"
+                href="/dashboard"
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50"
               >
                 Get Started
@@ -66,7 +65,11 @@ export default function Home() {
             <div className="text-center">
               <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
             </div>
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <form 
+              className="mt-8 space-y-6" 
+              onSubmit={handleSubmit}
+              method="post"
+            >
               <div className="rounded-md shadow-sm space-y-4">
                 <div>
                   <label htmlFor="email" className="sr-only">
