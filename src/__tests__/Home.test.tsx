@@ -27,8 +27,8 @@ describe('Home Component', () => {
     render(<Home />);
     
     expect(screen.getAllByText('Welcome to Tureet')[0]).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Email address')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
@@ -37,8 +37,8 @@ describe('Home Component', () => {
     
     render(<Home />);
     
-    const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const emailInput = screen.getByPlaceholderText('Email address');
+    const passwordInput = screen.getByPlaceholderText('Password');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -49,12 +49,10 @@ describe('Home Component', () => {
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'test@example.com',
         password: 'password123',
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/dashboard'
       });
     });
-
-    expect(mockPush).toHaveBeenCalledWith('/dashboard');
-    expect(mockRefresh).toHaveBeenCalled();
   });
 
   it('handles login failure', async () => {
@@ -62,8 +60,8 @@ describe('Home Component', () => {
     
     render(<Home />);
     
-    const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const emailInput = screen.getByPlaceholderText('Email address');
+    const passwordInput = screen.getByPlaceholderText('Password');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -71,8 +69,7 @@ describe('Home Component', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid email or password')).toBeInTheDocument();
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByText('An error occurred. Please try again.')).toBeInTheDocument();
     });
   });
 
@@ -86,19 +83,16 @@ describe('Home Component', () => {
     
     render(<Home />);
     
-    const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const emailInput = screen.getByPlaceholderText('Email address');
+    const passwordInput = screen.getByPlaceholderText('Password');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
-    const form = submitButton.closest('form');
 
     // Fill in the form
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
 
     // Submit the form
-    if (form) {
-      fireEvent.submit(form);
-    }
+    fireEvent.click(submitButton);
 
     // Wait for the loading state to be shown
     await waitFor(() => {

@@ -24,12 +24,17 @@ export default function Home() {
     }
 
     try {
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email,
         password,
         redirect: true,
         callbackUrl: '/dashboard'
       });
+
+      if (result?.error) {
+        setError('An error occurred. Please try again.');
+        setIsLoading(false);
+      }
     } catch (error) {
       setError('An error occurred. Please try again.');
       setIsLoading(false);
