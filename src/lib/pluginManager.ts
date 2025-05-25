@@ -1,6 +1,6 @@
 import type { Plugin, PluginManager, TestPlugin } from '@/types/plugin';
 
-class TureetPluginManager implements PluginManager {
+export class TureetPluginManager implements PluginManager {
   private plugins: Map<string, Plugin> = new Map();
 
   async registerPlugin(plugin: Plugin): Promise<void> {

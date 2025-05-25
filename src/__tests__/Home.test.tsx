@@ -34,17 +34,13 @@ describe('Home Component', () => {
 
   it('handles successful login', async () => {
     mockSignIn.mockResolvedValueOnce({ error: null });
-    
     render(<Home />);
-    
     const emailInput = screen.getByPlaceholderText('Email address');
     const passwordInput = screen.getByPlaceholderText('Password');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
-
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(submitButton);
-
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'test@example.com',
@@ -57,17 +53,13 @@ describe('Home Component', () => {
 
   it('handles login failure', async () => {
     mockSignIn.mockResolvedValueOnce({ error: 'Invalid credentials' });
-    
     render(<Home />);
-    
     const emailInput = screen.getByPlaceholderText('Email address');
     const passwordInput = screen.getByPlaceholderText('Password');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
-
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
     fireEvent.click(submitButton);
-
     await waitFor(() => {
       expect(screen.getByText('An error occurred. Please try again.')).toBeInTheDocument();
     });
