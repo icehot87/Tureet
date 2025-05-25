@@ -74,8 +74,10 @@ describe('DashboardLayout', () => {
     const signOutButton = screen.getByText('Sign out');
     await fireEvent.click(signOutButton);
 
-    expect(mockSignOut).toHaveBeenCalledWith({ redirect: false });
-    expect(mockPush).toHaveBeenCalledWith('/');
+    expect(mockSignOut).toHaveBeenCalledWith({ 
+      redirect: true,
+      callbackUrl: '/'
+    });
   });
 
   it('highlights active navigation item', () => {
