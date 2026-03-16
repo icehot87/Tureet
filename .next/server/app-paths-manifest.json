@@ -1,0 +1,13 @@
+{
+  "/test-cases/page": "app/test-cases/page.js",
+  "/test-suites/page": "app/test-suites/page.js",
+  "/api/test-suites/route": "app/api/test-suites/route.js",
+  "/api/test-plans/route": "app/api/test-plans/route.js",
+  "/api/test-cases/route": "app/api/test-cases/route.js",
+  "/test-plans/page": "app/test-plans/page.js",
+  "/test-cycles/page": "app/test-cycles/page.js",
+  "/api/test-cycles/route": "app/api/test-cycles/route.js",
+  "/test-runs/page": "app/test-runs/page.js",
+  "/api/test-runs/route": "app/api/test-runs/route.js",
+  "/reports/page": "app/reports/page.js"
+}

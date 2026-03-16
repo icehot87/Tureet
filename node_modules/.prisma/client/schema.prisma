@@ -1,0 +1,397 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TESTER
+  VIEWER
+}
+
+enum TestCaseStatus {
+  DRAFT
+  ACTIVE
+  OBSOLETE
+}
+
+enum TestCasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TestCaseType {
+  FUNCTIONAL
+  REGRESSION
+  INTEGRATION
+  SMOKE
+  SECURITY
+  PERFORMANCE
+  USABILITY
+}
+
+enum TestPlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TestCycleStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TestRunStatus {
+  NOT_STARTED
+  PASSED
+  FAILED
+  BLOCKED
+  SKIPPED
+}
+
+enum EntityType {
+  TEST_CASE
+  TEST_RUN
+  TEST_PLAN
+  TEST_CYCLE
+}
+
+enum ActivityType {
+  CREATED
+  UPDATED
+  DELETED
+  EXECUTED
+  COMMENTED
+  ATTACHED
+  VERSION_CREATED
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  DROPDOWN
+  MULTI_SELECT
+  CHECKBOX
+  URL
+  USER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          UserRole  @default(VIEWER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  createdTestCases TestCase[]   @relation("TestCaseCreator")
+  ownedTestPlans   TestPlan[]
+  executedTestRuns TestRun[]
+  comments         Comment[]    @relation("CommentUser")
+  attachments      Attachment[] @relation("AttachmentUser")
+  activities       Activity[]   @relation("ActivityUser")
+
+  @@map("users")
+}
+
+model Folder {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  parent    Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]   @relation("FolderHierarchy")
+  testCases TestCase[]
+
+  @@map("folders")
+}
+
+model TestCase {
+  id              String           @id @default(cuid())
+  title           String
+  description     String?
+  preconditions   String?
+  steps           String // JSON array of step objects
+  expectedResults String?
+  status          TestCaseStatus   @default(DRAFT)
+  priority        TestCasePriority @default(MEDIUM)
+  type            TestCaseType     @default(FUNCTIONAL)
+  tags            String[]         @default([])
+  requirementId   String?
+  folderId        String?
+  createdById     String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  folder        Folder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  creator       User              @relation("TestCaseCreator", fields: [createdById], references: [id])
+  testPlanCases TestPlanCase[]
+  testRuns      TestRun[]
+  suiteCases    TestSuiteCase[]
+  versions      TestCaseVersion[]
+
+  @@index([folderId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdById])
+  @@map("test_cases")
+}
+
+model TestPlan {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      TestPlanStatus @default(DRAFT)
+  ownerId     String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  owner      User           @relation(fields: [ownerId], references: [id])
+  testCases  TestPlanCase[]
+  testCycles TestCycle[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("test_plans")
+}
+
+model TestPlanCase {
+  id         String   @id @default(cuid())
+  testPlanId String
+  testCaseId String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  testPlan TestPlan @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testPlanId, testCaseId])
+  @@index([testPlanId])
+  @@index([testCaseId])
+  @@map("test_plan_cases")
+}
+
+model TestCycle {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      TestCycleStatus @default(NOT_STARTED)
+  testPlanId  String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  testPlan TestPlan  @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  testRuns TestRun[]
+
+  @@index([testPlanId])
+  @@index([status])
+  @@map("test_cycles")
+}
+
+model TestRun {
+  id           String        @id @default(cuid())
+  status       TestRunStatus @default(NOT_STARTED)
+  actualResult String?
+  notes        String?
+  bugUrl       String?
+  executedById String?
+  executedAt   DateTime?
+  testCaseId   String
+  testCycleId  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  testCase  TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  testCycle TestCycle @relation(fields: [testCycleId], references: [id], onDelete: Cascade)
+  executor  User?     @relation(fields: [executedById], references: [id], onDelete: SetNull)
+
+  @@unique([testCaseId, testCycleId])
+  @@index([testCaseId])
+  @@index([testCycleId])
+  @@index([executedById])
+  @@index([status])
+  @@map("test_runs")
+}
+
+model TestSuite {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  suiteCases TestSuiteCase[]
+
+  @@index([name])
+  @@map("test_suites")
+}
+
+model TestSuiteCase {
+  id         String   @id @default(cuid())
+  suiteId    String
+  testCaseId String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  suite    TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  testCase TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([suiteId, testCaseId])
+  @@index([suiteId])
+  @@index([testCaseId])
+  @@map("test_suite_cases")
+}
+
+model Attachment {
+  id           String     @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int // in bytes
+  path         String // file path or URL
+  entityType   EntityType
+  entityId     String
+  uploadedById String?
+  createdAt    DateTime   @default(now())
+
+  // Relations
+  uploadedBy User? @relation("AttachmentUser", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([uploadedById])
+  @@map("attachments")
+}
+
+model Comment {
+  id         String     @id @default(cuid())
+  content    String
+  entityType EntityType
+  entityId   String
+  authorId   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Relations
+  author User @relation("CommentUser", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Activity {
+  id         String       @id @default(cuid())
+  type       ActivityType
+  entityType EntityType
+  entityId   String
+  userId     String
+  details    String? // JSON string with change details
+  createdAt  DateTime     @default(now())
+
+  // Relations
+  user User @relation("ActivityUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model TestCaseVersion {
+  id              String           @id @default(cuid())
+  testCaseId      String
+  version         Int
+  title           String
+  description     String?
+  preconditions   String?
+  steps           String
+  expectedResults String?
+  status          TestCaseStatus
+  priority        TestCasePriority
+  type            TestCaseType
+  tags            String[]
+  requirementId   String?
+  folderId        String?
+  createdById     String
+  createdAt       DateTime         @default(now())
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testCaseId, version])
+  @@index([testCaseId])
+  @@index([createdAt])
+  @@map("test_case_versions")
+}
+
+model CustomField {
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  type         CustomFieldType
+  entityType   EntityType // Which entity type this field applies to
+  isRequired   Boolean         @default(false)
+  defaultValue String?
+  options      String[]        @default([]) // For dropdown/multi-select
+  order        Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  values CustomFieldValue[]
+
+  @@unique([name, entityType])
+  @@index([entityType])
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String     @id @default(cuid())
+  customFieldId String
+  entityType    EntityType
+  entityId      String
+  value         String? // JSON string for complex types
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  // Note: entityId is polymorphic - it can reference different entity types based on entityType
+  // We query by entityType and entityId manually, no foreign key constraints
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@unique([customFieldId, entityType, entityId])
+  @@index([customFieldId])
+  @@index([entityType, entityId])
+  @@map("custom_field_values")
+}
